@@ -14,7 +14,10 @@ import model.County;
 import model.Province;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.Window;
@@ -55,6 +58,14 @@ public class ChooseAreaActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		SharedPreferences prefs = PreferenceManager
+				.getDefaultSharedPreferences(this);
+		if (prefs.getBoolean("city_selected", false)) {
+			Intent intent = new Intent(this, WeatherActivity.class);
+			startActivity(intent);
+			finish();
+			return;
+		}
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.choose_area);
 		listView = (ListView) findViewById(R.id.list_view);
@@ -63,7 +74,7 @@ public class ChooseAreaActivity extends Activity {
 				android.R.layout.simple_list_item_1, dataList);
 		listView.setAdapter(adapter);
 		coolWeatherDB = CoolWeatherDB.getInstance(this);
-		
+
 		listView.setOnItemClickListener(new OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view,
@@ -74,6 +85,13 @@ public class ChooseAreaActivity extends Activity {
 				} else if (currentLevel == LEVEL_CITY) {
 					selectedCity = cityList.get(index);
 					queryCounties();
+				} else if (currentLevel == LEVEL_COUNTY) {
+					String countyCode = countyList.get(index).getCountyCode();
+					Intent intent = new Intent(ChooseAreaActivity.this,
+							WeatherActivity.class);
+					intent.putExtra("county_code", countyCode);
+					startActivity(intent);
+					finish();
 				}
 			}
 		});
@@ -198,10 +216,11 @@ public class ChooseAreaActivity extends Activity {
 			}
 		});
 	}
+
 	/*
 	 * 显示进度对话框
 	 */
-	private void showProgressDialog(){
+	private void showProgressDialog() {
 		if (progressDialog == null) {
 			progressDialog = new ProgressDialog(this);
 			progressDialog.setMessage("正在加载");
@@ -209,16 +228,16 @@ public class ChooseAreaActivity extends Activity {
 		}
 		progressDialog.show();
 	}
-	
+
 	/*
 	 * 关闭进度对话框
 	 */
-	private void closeProgressDialog(){
+	private void closeProgressDialog() {
 		if (progressDialog != null) {
 			progressDialog.dismiss();
 		}
 	}
-	
+
 	/*
 	 * 捕获Back键，根据当前的级别来判定，此时应该返回市列表、省列表，还是直接退出
 	 */
@@ -226,9 +245,9 @@ public class ChooseAreaActivity extends Activity {
 	public void onBackPressed() {
 		if (currentLevel == LEVEL_COUNTY) {
 			queryCities();
-		}else if (currentLevel == LEVEL_CITY) {
+		} else if (currentLevel == LEVEL_CITY) {
 			queryProvince();
-		}else {
+		} else {
 			finish();
 		}
 	}
